@@ -1,3 +1,6 @@
+import torch
+import numpy as np
+
 """
    Prioritized Experience Replayを実現するためのメモリクラス.
 """

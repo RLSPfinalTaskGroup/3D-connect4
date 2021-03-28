@@ -1,6 +1,9 @@
+from .abstract_agent import Algorithm
+
 class EnemyDQN(Algorithm):
-  def __init__(self, model, enemy_update_interval=1000):
+  def __init__(self, model, device, enemy_update_interval=1000):
     self.model = model
+    self.device = device
     self.enemy_update_interval = enemy_update_interval # 敵のネットワークを更新する間隔(episodeに依存)
 
 
@@ -9,7 +12,7 @@ class EnemyDQN(Algorithm):
     return_reward = 0
     this_agent_done = False
 
-    action = self.act(obs.to(device), eps) # epsでランダムな行動を選択し、1-epsでgreedyな行動選択をするエージェント
+    action = self.act(obs.to(self.device), eps) # epsでランダムな行動を選択し、1-epsでgreedyな行動選択をするエージェント
     next_obs, reward, done, info = env.step(action) # 環境中で実際に行動
     # 敵側の方策ネットは今回学習しないので、もし置けないところに置いた場合は単にもう一度置き直してもらう。
     # 敵プレーヤーに課せられるcoudlnt_locate_penaltyは自ブレーヤーには無関係なので無視。（reward は return_reward に計上しない）

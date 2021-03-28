@@ -1,33 +1,42 @@
 # ライブラリのインポート
 import os
+import pathlib
 import random
-import shutil
+import sys
 import time
-from abc import ABC, abstractmethod
+
 from datetime import datetime, timedelta, timezone
-from stat import SF_IMMUTABLE
 
 import gym
 import matplotlib.pyplot as plt
 import numpy as np
-# import pandas as pd
+
 import plotly.express as px
 import torch
-# import torchsummary
-from google.colab import output
+
 from gym import error, spaces, utils
 from gym.utils import seeding
 from torch import nn, optim
 from torch.utils.tensorboard import SummaryWriter
-from tqdm.notebook import tqdm
 
+current_dir = pathlib.Path(__file__).resolve().parent
+sys.path.append(str(current_dir) + "/../")
+
+from envs.three_d_connect_n import AnyNumberInARow3dEnv
+from agents.dqn_enemy_agent import EnemyDQN
+from agents.dqn_player_agent import PlayerDQN
+from agents.dqn_replay_buffer import PrioritizedReplayBuffer
+from net.dqn_cnn_network import CNNQNetwork
+from net.dqn_mlp_network import MLPQNetwork
+from trainers.dqn_trainer import DQNTrainer
 
 # 現在の日本標準時を取得
 JST = timezone(timedelta(hours=+9), 'JST')
 now = datetime.now(JST).strftime('%Y%m%d-%H%M%S')
 
 # 保存フォルダの準備
-project_root = "/content/drive/MyDrive/__MatsuoSeminerResearch/"
+project_root = os.getcwd()
+print(project_root)
 save_folder = project_root + "logs/" + now
 weight_folder = save_folder + "/weights/"
 tensorboard_folder = save_folder + "/tensorboard/"
@@ -55,11 +64,11 @@ first_player = 1
 # 訓練用の環境を作成(Trainerクラスに渡される)
 env = AnyNumberInARow3dEnv(
   num_grid=num_grid,
-  num_win_seq=num_win_seq, 
-  win_reward=win_reward, 
+  num_win_seq=num_win_seq,
+  win_reward=win_reward,
   draw_penalty=draw_penalty,
   could_locate_reward=could_locate_reward,
-  couldnt_locate_penalty=couldnt_locate_penalty, 
+  couldnt_locate_penalty=couldnt_locate_penalty,
   first_player=first_player
 )
 # env = Conv3dObsWrapper(env) # 方策ネットにconv3dを使う場合
@@ -67,11 +76,11 @@ env = AnyNumberInARow3dEnv(
 # 評価用の環境を作成(Trainerクラスに渡される)
 test_env = AnyNumberInARow3dEnv(
   num_grid=num_grid,
-  num_win_seq=num_win_seq, 
-  win_reward=win_reward, 
+  num_win_seq=num_win_seq,
+  win_reward=win_reward,
   draw_penalty=draw_penalty,
   could_locate_reward=could_locate_reward,
-  couldnt_locate_penalty=couldnt_locate_penalty, 
+  couldnt_locate_penalty=couldnt_locate_penalty,
   first_player=first_player
 )
 # test_env = Conv3dObsWrapper(test_env) # 方策ネットにconv3dを使う場合
@@ -103,12 +112,12 @@ optimizer = optim.Adam(main_net.parameters(), lr=1e-4)  # オプティマイザ�
 # リプレイバッファ用のハイパーパラメータ
 beta_begin = 0.2
 beta_end = 0.95
-beta_decay = 10**5 - 2000
+beta_decay = 10**4 - 2000
 
 # ε-greedy用のハイパーパラメータ
 epsilon_begin = 1.0
 epsilon_end = 0.05
-epsilon_decay = 10**5 - 2000
+epsilon_decay = 10**4 - 2000
 
 gamma = 0.99 # 時間割引率
 batch_size = 4 # バッチサイズ
@@ -125,6 +134,7 @@ player_agent = PlayerDQN(
     loss_func=loss_func,
     optimizer=optimizer,
     buffer=replay_buffer,
+    device=device,
     beta_begin=beta_begin,
     beta_end=beta_end,
     beta_decay=beta_decay,
@@ -139,6 +149,7 @@ player_agent = PlayerDQN(
     )
 enemy_agent = EnemyDQN(
     model=enemy_net,
+    device=device,
     enemy_update_interval=enemy_update_interval
 )
 
@@ -150,10 +161,10 @@ writer = SummaryWriter(log_dir=tensorboard_folder)
 # writer.add_graph(net, obs.float().to(device).unsqueeze(0))
 
 # Trainerクラスの任意パラメータ
-target_update_interval=2 * 10**3 # 学習安定化のために用いるターゲットネットワークの同期間隔
-model_save_interval=4 * 10**3 # networkの重みを保存する間隔
-num_episodes=10**5
-eval_interval=10**4
+target_update_interval=2 * 10**2 # 学習安定化のために用いるターゲットネットワークの同期間隔
+model_save_interval=4 * 10**2 # networkの重みを保存する間隔
+num_episodes=10**4
+eval_interval=10**3
 num_eval_episodes=20
 
 trainer = DQNTrainer(

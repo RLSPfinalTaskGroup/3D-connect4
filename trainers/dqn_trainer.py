@@ -1,7 +1,9 @@
 # エージェントと環境をメンバーとして持つ中間管理職
+from .abstract_trainer import Trainer
+
 class DQNTrainer(Trainer):
 
-  def __init__(self, env, test_env, player_agent, enemy_agent, first_player, writer, 
+  def __init__(self, env, test_env, player_agent, enemy_agent, first_player, writer,
               #  seed=0,
                target_update_interval=200, model_save_interval=4000, num_episodes=10**5, eval_interval=10**4, num_eval_episodes=3):
     self.env = env
@@ -41,10 +43,10 @@ class DQNTrainer(Trainer):
     num_draw=0 # 引き分け数
 
     # num_episode回ゲームを行う。
-    for episode in tqdm(range(self.num_episodes)):
+    for episode in range(self.num_episodes):
       obs = self.env.reset()
       done = False
-      
+
       step_start = step_total # このゲームが何ステップ目から開始したかを初期化
       step = 0 # 現在のエピソードで何ステップ目か
 
@@ -81,11 +83,11 @@ class DQNTrainer(Trainer):
 
         episode_reward += sum_reward # エピソード報酬にステップ報酬を計上
         step_total += 1 # 総ステップ数を増やす
-        
+
         # リプレイバッファに経験を蓄積(置けないところに置いた時との違いは、バッファに記録する経験の報酬が自プレーヤーの報酬のみを含むか"sum_reward"かという部分だけ。)
         # こちらの経験は、相手プレーヤーの行動によって勝利が生まれた場合に、その分の罰を含んだ経験となる。
         # ちなみにcouldnt_locate=True(置けないところに置いた)の時は、ここまでくることはない。（whileループを出るには　is_end_player_step=True の必要があるが、couldnt_locate=True の場合はずっと　is_end_player_step=False　のままのため）
-        self.player_agent.push_to_buffer(obs_before_player_act, sum_reward, obs_after_player_act, player_done)                   
+        self.player_agent.push_to_buffer(obs_before_player_act, sum_reward, obs_after_player_act, player_done)
 
         # アルゴリズムが準備できていれば，1回学習を行う．(bufferに十分なデータが蓄えられていれば、DQNでは毎ステップ学習がかかる)
         if self.player_agent.is_update():
@@ -107,7 +109,7 @@ class DQNTrainer(Trainer):
       # 一定エピソードごとにコンソールに出力
       if ((episode+1) % 500 == 0):
         print('Episode: {},  TotalStep: {}, EpisodeStep: {},  EpisodeReward: {}'.format(episode + 1, step_total, num_steps_in_episode, episode_reward))
-      
+
       # 一定間隔で方策評価
       if ((episode+1) % self.eval_interval == 0):
         self.evaluate(episode=episode)
@@ -116,9 +118,9 @@ class DQNTrainer(Trainer):
       # writer.add_scalar('Total-Reward', total_reward, episode+1)
       self.writer.add_scalar('EpisodeReward', episode_reward, episode+1)
       self.writer.add_scalar('EpisodeStep', num_steps_in_episode, episode+1)
-      self.writer.add_scalar('WinningRate', num_win/(episode+1) * 100, episode+1) 
-      self.writer.add_scalar('LosingRate', num_lose/(episode+1) * 100, episode+1) 
-      self.writer.add_scalar('DrawingRate', num_draw/(episode+1) * 100, episode+1) 
+      self.writer.add_scalar('WinningRate', num_win/(episode+1) * 100, episode+1)
+      self.writer.add_scalar('LosingRate', num_lose/(episode+1) * 100, episode+1)
+      self.writer.add_scalar('DrawingRate', num_draw/(episode+1) * 100, episode+1)
 
       # enemyネットワークを定期的に強くする
       if self.enemy_agent.is_update(episode):
@@ -145,7 +147,7 @@ class DQNTrainer(Trainer):
     if (is_final):
       eps = 0.99
       num_eval_episodes = 100
-    
+
     info={"turn": self.first_player, "winner": 0}
 
     step_total = 0 # 評価実験を通して今何ステップ目か
@@ -160,7 +162,7 @@ class DQNTrainer(Trainer):
     for _ in range(num_eval_episodes):
       obs = self.test_env.reset()
       done = False
-      
+
       step = 0 # 現在のエピソードで何ステップ目か
 
       episode_reward=0 # ゲームを通した報酬の合計（エピソード報酬）
@@ -204,9 +206,9 @@ class DQNTrainer(Trainer):
         num_lose += 1
       else:
         num_draw += 1
-      
+
       returns.append(episode_reward)
-    
+
     winning_rate = num_win/num_eval_episodes * 100
     losing_rate = num_lose/num_eval_episodes * 100
     drawing_rate = num_draw/num_eval_episodes * 100
@@ -218,12 +220,12 @@ class DQNTrainer(Trainer):
       self.returns['episode'].append(episode)
       self.returns['return'].append(mean_return)
 
-      self.writer.add_scalar('Val-WinningRate', winning_rate, episode+1) 
-      self.writer.add_scalar('Val-LosingRate', losing_rate, episode+1) 
+      self.writer.add_scalar('Val-WinningRate', winning_rate, episode+1)
+      self.writer.add_scalar('Val-LosingRate', losing_rate, episode+1)
       self.writer.add_scalar('Val-DrawingRate', drawing_rate, episode+1)
       self.writer.add_scalar('Val-CouldntLocateRate', couldnt_locate_rate, episode+1)
       self.writer.add_scalar('Val-MeanReturn', mean_return, episode+1)
-    
+
     print("Win: {}%, Lose: {}%, Draw: {}%, Couldnt: {}%, Return: {}".format(winning_rate, losing_rate, drawing_rate, couldnt_locate_rate, mean_return))
 
 

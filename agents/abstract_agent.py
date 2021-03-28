@@ -1,3 +1,7 @@
+import random
+import torch
+from abc import ABC, abstractmethod
+
 class Algorithm(ABC):
   @abstractmethod
   def step(self, env, obs, t):
@@ -18,7 +22,7 @@ class Algorithm(ABC):
     """ 1回分の学習を行う． """
     pass
 
-  # epsilon-greedy. 確率epsilonでランダムに行動し, それ以外はニューラルネットワークの予測結果に基づいてgreedyに行動 
+  # epsilon-greedy. 確率epsilonでランダムに行動し, それ以外はニューラルネットワークの予測結果に基づいてgreedyに行動
   def act(self, obs, epsilon):
     if random.random() < epsilon:
       action = random.randrange(self.model.n_action)

@@ -1,3 +1,5 @@
+import numpy as np
+
 class UtilClass():
   """Utility class
   This class gives some useful function for this game.
@@ -9,15 +11,15 @@ class UtilClass():
     draw_penalty (float): the penalty agent gets when it draw the game
     lose_penalty (float): the penalty agent gets when it lose the game
     could_locate_reward (float): the additional reward for agent being able to put the stone
-    couldnt_locate_penalty (float): the penalty agent gets when it choose the location where the stone cannot be placed.   
+    couldnt_locate_penalty (float): the penalty agent gets when it choose the location where the stone cannot be placed.
     time_penalty (float): the penalty agents gets along with timesteps
-  
+
   """
   def __init__(
-      self, 
+      self,
       num_grid,
       num_win_seq,
-      win_reward, 
+      win_reward,
       draw_penalty,
       lose_penalty, # 未使用
       could_locate_reward,
@@ -70,7 +72,7 @@ class UtilClass():
       reward = -self.draw_penalty - self.could_locate_reward
     else:
       pass
-    
+
     return done, reward, winner
 
 
@@ -87,13 +89,13 @@ class UtilClass():
                                 dim_W_stride_id:dim_W_stride_id+self.num_win_seq,
                                 dim_D_stride_id:dim_D_stride_id+self.num_win_seq
                                 ]
-          
+
           # x,y,z軸各方向に垂直な面について解析
           cube_list = [
-                       searching_cube, 
-                       np.rot90(searching_cube, axes=(0, 1)), 
+                       searching_cube,
+                       np.rot90(searching_cube, axes=(0, 1)),
                        searching_cube.T
-                       ] 
+                       ]
 
           # cube内の考えうる全ての二次元平面上でループ
           for each_cube in cube_list:
@@ -105,12 +107,12 @@ class UtilClass():
           # 立体的な斜め
           if (self.is_diag_on_3d_cube(each_cube)):
             return True
-    
+
     return False
 
 
   # N×Nの2次元配列上でN個玉が並んでいるところがあるかを判定する関数。（ビンゴの判定みたいなもの）
-  def is_end_on_2d_plane(self, org_plane: np.ndarray) -> bool:
+  def is_end_on_2d_plane(self, org_plane):
     assert org_plane.shape == (self.num_win_seq, self.num_win_seq)
 
     # 行・列
@@ -118,7 +120,7 @@ class UtilClass():
       for row in plane:
         if (all(row == self.WIN_A) or all(row == self.WIN_B)):
           return True
-    
+
     # 斜め
     if (abs(np.trace(org_plane))==self.num_win_seq or abs(np.trace(np.fliplr(org_plane)))==self.num_win_seq):
       return True
@@ -129,7 +131,7 @@ class UtilClass():
   # N×N×Nの3次元配列上で、N個の玉が立体対角上に並んでいるかどうかを判定する関数。
   def is_diag_on_3d_cube(self, org_cube):
     assert org_cube.shape == (self.num_win_seq, self.num_win_seq, self.num_win_seq)
-    
+
     for cube in [org_cube, np.rot90(org_cube, axes=(1,2)), np.rot90(org_cube, axes=(0,1)), np.rot90(org_cube.T, axes=(0,1))]:
 
       oblique_elements = np.empty(0)
@@ -141,7 +143,7 @@ class UtilClass():
 
       if (all(oblique_elements == np.full(self.num_win_seq, 1)) or all(oblique_elements == np.full(self.num_win_seq, -1))):
         return True
-    
+
     return False
 
 
