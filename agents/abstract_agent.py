@@ -1,5 +1,6 @@
 import random
 import torch
+import numpy as np
 from abc import ABC, abstractmethod
 
 class Algorithm(ABC):
@@ -22,10 +23,19 @@ class Algorithm(ABC):
     """ 1回分の学習を行う． """
     pass
 
+
+  def random_act(self, env):
+    top_layer = np.array(env.board)[:, :, env.num_grid-1]
+    indices = np.where(top_layer==0)
+    selected_index = random.randrange(len(indices[0]))
+    action = env.num_grid*indices[0][selected_index] + indices[1][selected_index]
+    return action
+
+
   # epsilon-greedy. 確率epsilonでランダムに行動し, それ以外はニューラルネットワークの予測結果に基づいてgreedyに行動
-  def act(self, obs, epsilon):
+  def act(self, obs, env, epsilon):
     if random.random() < epsilon:
-      action = random.randrange(self.model.n_action)
+      action = self.random_act(env)
     else:
       # 行動を選択する時には勾配を追跡する必要がない
       with torch.no_grad():

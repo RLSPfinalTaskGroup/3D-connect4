@@ -33,7 +33,7 @@ class PlayerDQN(Algorithm):
     self.beta_func = lambda step: min(beta_end, beta_begin + (beta_end - beta_begin) * (step / beta_decay))
 
 
-  def step(self, env, obs, t, step_total, is_eval=False):
+  def step(self, env, obs, t, num_couldnt_locate, step_total, is_eval=False):
     this_agent_done = False
 
     t += 1 # エピソードステップを＋1
@@ -44,13 +44,17 @@ class PlayerDQN(Algorithm):
     if (is_eval):
       eps = self.eps_for_eval
 
-    self.curr_action = self.act(obs.to(self.device), eps) # ε-greedyで行動を選択
+    self.curr_action = self.act(obs.to(self.device), env, eps) # ε-greedyで行動を選択
+    # 置けないところに置こうとした回数が10回を超えたら、置けるところからランダム選択
+    if (num_couldnt_locate > 10):
+      self.curr_action = self.random_act(env) # 完全にランダムな行動を選択。
     next_obs, reward, done, info = env.step(self.curr_action) # 環境中で実際に行動
 
     # 置けない場所におこうとした場合、その情報はバッファに格納され、もう一度自分のターン（置き直せる）
     # ただ、環境から帰ってくる負の報酬（penalty）はステップ報酬に（従ってエピソード報酬・総報酬和にも）計上される。
     # また、「プレーヤーが変わらない」という処理は環境側で行っていることに注意。
     if (info["is_couldnt_locate"]==True):
+      num_couldnt_locate += 1
       # 評価時には経験の蓄積は行わない
       if (not is_eval):
         self.push_to_buffer(obs, reward, next_obs, done) # 置けなかったときのことを学習させる（経験バッファに格納）
@@ -65,7 +69,7 @@ class PlayerDQN(Algorithm):
     if (done):
       t = 0 # エピソードステップを初期化
 
-    return next_obs, reward, done, info, t, this_agent_done
+    return next_obs, reward, done, info, t, num_couldnt_locate, this_agent_done
 
 
   def is_update(self):

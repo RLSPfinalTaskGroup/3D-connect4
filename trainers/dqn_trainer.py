@@ -62,12 +62,13 @@ class DQNTrainer(Trainer):
         enemy_reward = 0 # 相手のターンの間に得た報酬の和（couldnt_locateが連続した場合は、相手のターンの間に負の報酬が蓄積されるため）
         is_end_player_step = False # 1ステップのうち、プレーヤーの行動が終了したかどうかの判定フラグ
         is_end_enemy_step = False # 1ステップのうち、相手の行動が終了したかどうかの判定フラグ
+        num_couldnt_locate = 0 # 一定回数以上おけないところに置こうとしたら、強制的に空いているところに玉を置くようにするためのカウンタ
 
         # ゲーム自体が終了(done)するか、両方のプレーヤーの手番が終了したら、1ステップ終了
         while (not done) and (not is_end_player_step or not is_end_enemy_step):
           # 自分のターンの場合
           if (info["turn"] == 1):
-            next_obs, reward, done, info, step, is_end_player_step = self.player_agent.step(self.env, obs, step, step_total)
+            next_obs, reward, done, info, step, num_couldnt_locate, is_end_player_step = self.player_agent.step(self.env, obs, step, num_couldnt_locate, step_total)
             obs_before_player_act = obs
             obs_after_player_act = next_obs
             player_done = done
@@ -125,6 +126,7 @@ class DQNTrainer(Trainer):
       self.writer.add_scalar('WinningRate', num_win/(episode+1) * 100, episode+1)
       self.writer.add_scalar('LosingRate', num_lose/(episode+1) * 100, episode+1)
       self.writer.add_scalar('DrawingRate', num_draw/(episode+1) * 100, episode+1)
+      self.writer.add_scalar('CouldntLocateRate', num_couldnt_locate/num_steps_in_episode * 100, episode+1)
 
       # enemyネットワークを定期的に強くする
       if self.enemy_agent.is_update(episode):
@@ -182,7 +184,7 @@ class DQNTrainer(Trainer):
         while (not done) and (not is_end_player_step or not is_end_enemy_step):
           # 自分のターンの場合
           if (info["turn"] == 1):
-            next_obs, reward, done, info, step, is_end_player_step = self.player_agent.step(self.test_env, obs, step, step_total, is_eval=True)
+            next_obs, reward, done, info, step, num_couldnt_locate, is_end_player_step = self.player_agent.step(self.test_env, obs, step, num_couldnt_locate, step_total, is_eval=True)
             player_reward += reward
 
           # 相手ターンの場合
@@ -192,9 +194,6 @@ class DQNTrainer(Trainer):
 
           # 次の観測をセット
           obs = next_obs
-
-          if (info["is_couldnt_locate"]):
-            num_couldnt_locate += 1
 
         # ステップ報酬に、自プレーヤーの得た報酬と、敵プレーヤーの得た報酬（自プレーヤーからみた場合は罰）を計上。
         # 今は、sum_reward は player_agent 視点の「報酬」を意味しているので、 enemy_reward は減算処理をする。
