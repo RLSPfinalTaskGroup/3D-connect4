@@ -1,9 +1,12 @@
 # エージェントと環境をメンバーとして持つ中間管理職
 from .abstract_trainer import Trainer
+import torch
+import numpy as np
+import matplotlib.pyplot as plt
 
 class DQNTrainer(Trainer):
 
-  def __init__(self, env, test_env, player_agent, enemy_agent, first_player, writer,
+  def __init__(self, env, test_env, player_agent, enemy_agent, first_player, writer, weight_folder,
               #  seed=0,
                target_update_interval=200, model_save_interval=4000, num_episodes=10**5, eval_interval=10**4, num_eval_episodes=3):
     self.env = env
@@ -12,6 +15,7 @@ class DQNTrainer(Trainer):
     self.enemy_agent = enemy_agent
     self.first_player = first_player # 先行はどちらか
     self.writer = writer
+    self.weight_folder = weight_folder
 
     # 環境の乱数シードを設定する．
     # self.env.seed(seed)
@@ -133,9 +137,9 @@ class DQNTrainer(Trainer):
 
       # networkの重みを定期的に保存
       if ((episode + 1) % self.model_save_interval == 0):
-        torch.save(self.player_agent.model.state_dict(), weight_folder + "episode_{}.pth".format(episode+1))
+        torch.save(self.player_agent.model.state_dict(), self.weight_folder + "episode_{}.pth".format(episode+1))
 
-    torch.save(self.player_agent.model.state_dict(), weight_folder+"weights_final.pth")
+    torch.save(self.player_agent.model.state_dict(), self.weight_folder+"weights_final.pth")
     self.writer.close()
 
 

@@ -35,8 +35,7 @@ JST = timezone(timedelta(hours=+9), 'JST')
 now = datetime.now(JST).strftime('%Y%m%d-%H%M%S')
 
 # 保存フォルダの準備
-project_root = os.getcwd()
-print(project_root)
+project_root = str(current_dir) + "/../"
 save_folder = project_root + "logs/" + now
 weight_folder = save_folder + "/weights/"
 tensorboard_folder = save_folder + "/tensorboard/"
@@ -174,6 +173,7 @@ trainer = DQNTrainer(
     enemy_agent=enemy_agent,
     first_player=first_player,
     writer=writer,
+    weight_folder=weight_folder,
     # seed=seed,
     target_update_interval=target_update_interval,
     model_save_interval=model_save_interval,
