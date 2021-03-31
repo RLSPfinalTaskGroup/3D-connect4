@@ -52,7 +52,7 @@ print("Model is training on", device)
 
 """ gym環境の宣言 """
 # 環境のハイパーパラメータの指定
-num_grid = 10
+num_grid = 4 #10
 num_win_seq = 4
 win_reward = 10
 draw_penalty = 5
@@ -119,7 +119,7 @@ epsilon_end = 0.05
 epsilon_decay = 10**4 - 2000
 
 gamma = 0.99 # 時間割引率
-batch_size = 4 # バッチサイズ
+batch_size = 1 # バッチサイズ (4)
 initial_buffer_size = 10**2 # 方策更新を始めるのに最低限必要な経験の数
 eps_for_eval = 0.05 # 評価時に用いるεの値
 seed = 1

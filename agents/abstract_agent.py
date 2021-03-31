@@ -25,7 +25,7 @@ class Algorithm(ABC):
 
 
   def random_act(self, env):
-    top_layer = np.array(env.board)[:, :, env.num_grid-1]
+    top_layer = np.array(env.board)[env.num_grid-1, :, :]
     indices = np.where(top_layer==0)
     selected_index = random.randrange(len(indices[0]))
     action = env.num_grid*indices[0][selected_index] + indices[1][selected_index]

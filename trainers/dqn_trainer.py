@@ -255,3 +255,4 @@ class DQNTrainer(Trainer):
     plt.tick_params(labelsize=18)
     plt.title("{} in A Row".format(self.env.utils.num_win_seq), fontsize=24)
     plt.tight_layout()
+    plt.show()
